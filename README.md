@@ -17,6 +17,61 @@ project. The kit includes:
 - Best practises in implementing PyTorch models for geoscience from multi-year experience
 
 
+The task
+--------
+
+The goal is to predict **total cloud cover** — a single fraction in [0, 1]
+representing the proportion of a grid cell covered by clouds — for every
+location on a global 64×64 grid at 1.5° horizontal resolution.
+
+Inputs are drawn from **ERA5**, the ECMWF atmospheric reanalysis or from
+**AIMIP** (AI Model Intercomparison Project, for validation and testing only).
+Each sample contains daily-averaged fields:
+
+- **Pressure-level fields** (`input_level`): temperature, specific humidity,
+  and horizontal wind components (u, v) at 7 pressure levels (1000, 850, 700,
+  500, 250, 100, and 50 hPa).
+- **Auxiliary static fields** (`input_auxiliary`): land-sea mask, orography,
+  land-cover type, longitude, and latitude.
+
+For all inputs, the **target** is the daily-averaged total cloud cover from
+ERA5.
+
+The training set consists of ERA5 data from 1979-01-01 to 2018-12-31 for a
+single region (region 1). The validation and test sets consist of ERA5 and
+AIMIP data for two regions. Consequently, there are four different evaluation configurations: ERA5 for region 1, ERA5 for region 2, AIMIP for region 1, and
+AIMIP for region 2. Two different regions are tested for generalisation to
+unseen geographies, and the AIMIP configurations are tested for generalisation
+to AI weather models.
+
+The ERA5 submissions are scored with the mean absolute error (MAE); AIMIP
+submissions are scored with the continuous ranked probability score (CRPS),
+which additionally rewards well-calibrated uncertainty by asking for 3
+ensemble members instead of a single prediction.
+
+The composite **skill score** is the average of the four individual skill
+scores (one per region and dataset), where each individual skill score is
+defined as ``1 − score / baseline_score``. A skill score of 0 matches the
+baseline; a higher score is better.
+
+
+Workflow overview
+-----------------
+
+The typical workflow from setup to leaderboard entry follows these five steps:
+
+1. **Set up** — create the conda environment, install dependencies, and
+   download the data (see `Get started`_).
+2. **Train** — run ``scripts/train.py`` to train a model; checkpoints are
+   saved under ``data/models/<exp_name>/``.
+3. **Forecast** — run ``scripts/forecast.py +suite=val`` to produce
+   regional netCDF forecast files for all four evaluation configurations.
+4. **Evaluate** — run ``scripts/evaluate.py`` to score your forecasts against
+   the validation targets and check your skill score locally.
+5. **Submit** — run ``scripts/submit.py`` (or upload manually via the portal)
+   to send your test-set forecasts to the leaderboard.
+
+
 Directories
 -----------
 
@@ -32,11 +87,15 @@ The repository contains the following summarized directories:
 | `notebooks/` | Place for your own Jupyter notebooks. Drop exploration and analysis notebooks here. |
 | `scripts/` | Entry-point scripts driven by Hydra. `train.py` trains a model, `forecast.py` produces regional netCDF forecasts, `evaluate.py` scores forecasts against validation targets, and `submit.py` runs the forecast suite and POSTs predictions to the submission portal. |
 | `starter_kit/` | Installable Python package (`pip install -e .`). Contains the core library code: `data.py` (PyTorch datasets), `layers.py` (input normalisation), `model.py` (abstract `BaseModel` trainer), and the `baselines/` sub-package. |
-| `starter_kit/baselines/` | Three concrete baseline implementations: `mlp.py` (multi-layer perceptron), `parametric.py` (parametric cloud-cover scheme), and `sundquist.py` (Sundquist diagnostic scheme). Use these as templates for your own model. |
+| `starter_kit/baselines/` | Three concrete baseline implementations: `mlp.py` (multi-layer perceptron), `parametric.py` (parametric cloud-cover scheme), and `sundquist.py` (Sundqvist diagnostic scheme). Use these as templates for your own model. |
 
 
 Get started
 -----------
+
+**Prerequisites**: `conda <https://docs.conda.io/en/latest/miniconda.html>`_
+must be installed. Python 3.10 or later is recommended. A GPU is optional but
+speeds up training significantly; the scripts run on CPU by default.
 
 To get started you can either use the provided Nvidia Brev launchable, which
 sets up the environment for you and automatically downloads the data, or you
@@ -96,6 +155,12 @@ To train a model, you can use the provided `train.py` script. Based on Hydra,
 the script supports flexible configuration and allows you to easily switch
 between different implemented models.
 
+**New to Hydra?** Hydra is a configuration framework used by all scripts here.
+The short version: every configuration key can be overridden directly on the
+command line as ``key=value`` (e.g. ``device=cuda``), and preset configuration
+groups can be loaded with ``+group=name`` (e.g. ``+experiment=baseline_mlp``).
+You do not need to edit any YAML file to run the provided examples.
+
 The following examples use the baseline multi-layered perceptron (MLP) model.
 When you are not familiar with PyTorch and Hydra, we recommend to execute the
 following steps:
@@ -110,8 +175,8 @@ following steps:
     ```
 
 2. The trained model is saved to `data/models/baseline_mlp/`. The experiment
-   name (`exp_name`) controls this path and links training to later steps.
-   A CSV training log is also written there.
+    name (here, `baseline_mlp`) controls this path and links training to later
+    steps. A CSV training log is also written there.
 
 Any key in the configuration can be overridden directly on the command line.
 For example, to increase the number of epochs and adjust the learning rate:
@@ -134,7 +199,7 @@ python scripts/train.py +experiment=baseline_parametric device=cuda
 python scripts/train.py +experiment=baseline_sundquist device=cuda
 ```
 
-Model forecasting
+Forecasting
 -----------------
 
 After your model is trained, you can use the provided `forecast.py` script to
@@ -171,7 +236,7 @@ setting:
 
 Usually, the forecast script should support all experiment and model config
 options from the training script. Hence, to change the experiment to the
-Sundquist baseline implementation, you can use:
+Sundqvist baseline implementation, you can use:
 
     ```bash
     python scripts/forecast.py +experiments=baseline_sundquist
@@ -179,7 +244,7 @@ Sundquist baseline implementation, you can use:
 
 The checkpoint path can be also set to `None` to skip the checkpoint loading
 and to run forecasts with an untrained model. This is helpful for debugging
-purposes. The following command would run the forecast for the Sundquist
+purposes. The following command would run the forecast for the Sundqvist
 baseline without any checkpoint loading and store the forecast to
 `data/forecasts/baseline_sundquist_untrained/forecast.nc`:
 
@@ -222,7 +287,7 @@ While you can create the files on your own, we recommend to run the suite as it
 produces correctly named files.
 
 After producing all four forecasting files with the suite, you can run the
-evaluation. For the Sundquist experiment it would read:
+evaluation. For the Sundqvist experiment it would read:
 
     ```bash
     python scripts/evaluate.py \
@@ -241,7 +306,7 @@ to a `json` file (here to `scores/baseline_sundquist.json`) by:
 
 The output will contain the mean absolute error (MAE) for the two ERA5
 configurations and the continuous ranked probability score (CRPS) for the two
-AIMIP configurations, as well as the combined skill `score` (here, the higher, the better) and a dummy team_name. The json for a trained Sundquist experiment
+AIMIP configurations, as well as the combined skill `score` (here, the higher, the better) and a dummy team_name. The json for a trained Sundqvist experiment
 in the validation suite should look like:
 
     ```json
@@ -255,7 +320,7 @@ in the validation suite should look like:
     }
     ```
 
-For the Sundquist experiment, it is expected that the skill score is around 0., as it is normalised by test scores of a trained Sundquist model.
+For the Sundqvist experiment, it is expected that the skill score is around 0., as it is normalised by test scores of a trained Sundqvist model.
 
 The storage of `json` files for different configurations allows you a
 programmatic evaluation of your model.
@@ -277,7 +342,7 @@ to link your submission to a team name on the leaderboard. If you don't have a
 whitelisted email address, please contact the hackathon organizers.
 
 1. `submit.py` script: run the script with your email address and your forecast
-    configuration (here once again for the Sundquist baseline):
+    configuration (here once again for the Sundqvist baseline):
 
     ```bash
     python scripts/submit.py \
@@ -304,7 +369,7 @@ whitelisted email address, please contact the hackathon organizers.
 2. Manual submission: when you have already produced forecasts you can also
     manually submit them either via the
     [portal](https://submission-7rre8iitk.brevlab.com/) or API. To submit via
-    API you can use (once again for the Sundquist baseline):
+    API you can use (once again for the Sundqvist baseline):
 
     ```bash
     curl -s -X POST https://submission-7rre8iitk.brevlab.com/api/v1/submissions \
@@ -337,6 +402,30 @@ You can also use the submissions [portal](https://submission-7rre8iitk.brevlab.c
 When your submission was successful, it will be added to previously mentioned
 time-ordered leaderboard and to the hourly-updated official
 [leaderboard](https://tobifinn-ci2026-hackathon-leaderboard.hf.space/).
+
+Baseline models
+---------------
+
+Three baselines are provided, each representing a different modelling
+approach:
+
+- **MLP** (``baseline_mlp``): a fully-connected neural network that takes all
+  pressure-level and auxiliary fields as input and learns a direct mapping to
+  cloud cover. It is the recommended starting point for participants familiar
+  with deep learning.
+- **Parametric** (``baseline_parametric``): derives cloud cover per level from
+  relative humidity using a learnable sigmoid threshold, then combines levels
+  with a maximum-overlap assumption. Only temperature and specific humidity
+  are used. It is compact and interpretable, and trains quickly.
+- **Sundqvist** (``baseline_sundquist``): a physically-motivated diagnostic
+  scheme (Sundqvist et al., 1989) that computes cloud cover from relative
+  humidity relative to a learnable critical threshold. It serves as a physical
+  reference and defines the normalisation baseline for the skill score (a
+  skill score of ~0 corresponds to Sundqvist performance).
+
+All three follow the same training interface and can be swapped by passing
+``+experiment=<name>`` to ``train.py``.
+
 
 Own implementation
 --------------------
@@ -383,3 +472,11 @@ In this case, you no longer need to pass the `model` flag, since it is
 referenced in the experiment config. This also allows you to easily switch
 between different experiments and models by just changing the experiment
 config.
+
+
+Getting help
+------------
+
+If you run into problems, have questions about the data, or need your email
+address whitelisted for submission, please reach out to the hackathon
+organisers.
