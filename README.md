@@ -17,6 +17,24 @@ project. The kit includes:
 - Best practises in implementing PyTorch models for geoscience from multi-year experience
 
 
+Directories
+-----------
+
+The repository contains the following summarized directories:
+
+| Directory | Description |
+|---|---|
+| `configs/` | Hydra configuration files for all scripts. Sub-folders cover `data` (dataset paths and splits), `experiments` (full experiment presets combining model + hyperparameters), `model` (architecture hyperparameters), `suite` (multi-region forecast suites), and `test_data` (test-set paths). Root-level YAMLs (`train.yaml`, `forecast.yaml`, `submit.yaml`) are the default configs for each script. |
+| `configs/experiments/` | Ready-to-use experiment presets for the three baselines (`baseline_mlp`, `baseline_parametric`, `baseline_sundquist`). Pass one with `+experiment=<name>` to reproduce a baseline run end-to-end. |
+| `configs/model/` | Per-architecture hyperparameter files (`mlp.yaml`, `parametric.yaml`, `sundquist.yaml`). Create a new file here when you implement your own model. |
+| `configs/suite/` | Suite configs (`val.yaml`, `test.yaml`) that instruct `forecast.py` to produce all four regional forecast files in one go. |
+| `data/` | Runtime data directory (not committed). Sub-folders are `train_data/` (downloaded zarr archives and validation/test targets), `models/` (saved checkpoints and training logs, keyed by `exp_name`), and `forecasts/` (forecast netCDF files, keyed by `exp_name`). |
+| `notebooks/` | Place for your own Jupyter notebooks. Drop exploration and analysis notebooks here. |
+| `scripts/` | Entry-point scripts driven by Hydra. `train.py` trains a model, `forecast.py` produces regional netCDF forecasts, `evaluate.py` scores forecasts against validation targets, and `submit.py` runs the forecast suite and POSTs predictions to the submission portal. |
+| `starter_kit/` | Installable Python package (`pip install -e .`). Contains the core library code: `data.py` (PyTorch datasets), `layers.py` (input normalisation), `model.py` (abstract `BaseModel` trainer), and the `baselines/` sub-package. |
+| `starter_kit/baselines/` | Three concrete baseline implementations: `mlp.py` (multi-layer perceptron), `parametric.py` (parametric cloud-cover scheme), and `sundquist.py` (Sundquist diagnostic scheme). Use these as templates for your own model. |
+
+
 Get started
 -----------
 
@@ -24,10 +42,18 @@ To get started you can either use the provided Nvidia Brev launchable, which
 sets up the environment for you and automatically downloads the data, or you
 can set up the environment manually as follows:
 
+0. (Best practises) Fork the repository with GitHub and track your changes with
+    git in the forked repository
+
 1. Clone the repository to your local machine.
     ```bash
     git clone https://github.com/tobifinn/CI2026-StarterKit.git
     cd CI2026-StarterKit
+    ```
+    or if you have forked the repository
+    ```bash
+    git clone https://github.com/<your_github_name>/<your_repo_name>.git
+    cd <your_repo_name>
     ```
 
 2. Create a new conda environment using the provided `environment.yml` file:
