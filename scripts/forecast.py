@@ -21,6 +21,7 @@ Override config values on the command line::
 # System modules
 import logging
 import os
+from pathlib import Path
 from typing import List
 
 # External modules
@@ -30,12 +31,13 @@ import torch.nn
 from torch.utils.data import DataLoader
 import xarray as xr
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf, open_dict
 
 from tqdm.autonotebook import tqdm
 
 # Internal modules
 from starter_kit.data import TestDataset
+from starter_kit.utils import find_matching_runs
 
 
 main_logger = logging.getLogger(__name__)
@@ -237,6 +239,16 @@ def run_forecast(cfg: DictConfig) -> None:
         ``output_path``, ``ckpt_path``, ``device``, ``network``,
         and ``data``.
     '''
+    exp_name = OmegaConf.select(cfg, "exp_name")
+    if cfg.ckpt_path is not None and not Path(cfg.ckpt_path).exists() and exp_name:
+        runs = find_matching_runs(exp_name)
+        if runs:
+            latest = runs[-1]
+            with open_dict(cfg):
+                cfg.ckpt_path = cfg.ckpt_path.replace(exp_name, latest)
+                cfg.output_path = cfg.output_path.replace(exp_name, latest)
+                cfg.exp_name = latest
+
     device = torch.device(cfg.device)
 
     network = _build_network(cfg.network, device)

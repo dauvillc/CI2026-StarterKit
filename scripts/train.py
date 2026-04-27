@@ -18,6 +18,8 @@ Override config values on the command line::
 # System modules
 import logging
 import os
+from datetime import datetime
+from pathlib import Path
 from typing import Tuple
 
 import hydra
@@ -25,7 +27,7 @@ import hydra
 # External modules
 import torch
 import torch.nn
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf, open_dict
 from torch.utils.data import DataLoader
 
 # Internal modules
@@ -119,7 +121,17 @@ def main(cfg: DictConfig) -> None:
     """
     torch.manual_seed(cfg.seed)
     device = torch.device(cfg.device)
+
+    if cfg.use_timestamp:
+        _ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        with open_dict(cfg):
+            # The following also modifies the store_path since it references exp_name
+            cfg.exp_name = f"{cfg.exp_name}_{_ts}"
+
     os.makedirs(cfg.store_path, exist_ok=True)
+    _hydra_cfg_path = Path(cfg.store_path) / "hydra" / "config.yaml"
+    _hydra_cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    OmegaConf.save(cfg, _hydra_cfg_path)
 
     network = _build_network(cfg.network, device)
     train_loader, val_loader = _build_loaders(cfg.data)

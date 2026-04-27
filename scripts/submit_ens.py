@@ -45,6 +45,7 @@ import xarray as xr
 # Internal modules
 from forecast import run_forecast
 from omegaconf import DictConfig, OmegaConf
+from starter_kit.utils import find_matching_runs
 
 main_logger = logging.getLogger(__name__)
 
@@ -215,6 +216,14 @@ def _run_all_ensemble_forecasts(cfg: DictConfig) -> None:
         Full ensemble config tree.
     """
     ensemble_experiments = list(cfg.ensemble_experiments)
+    expanded = []
+    for name in ensemble_experiments:
+        runs = find_matching_runs(name)
+        if runs:
+            expanded.extend(runs)
+        else:
+            main_logger.warning("No model runs found for exp_name=%s — skipping.", name)
+    ensemble_experiments = expanded
     if not ensemble_experiments:
         main_logger.error("ensemble_experiments is empty — nothing to do.")
         sys.exit(1)
