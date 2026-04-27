@@ -1,0 +1,30 @@
+defaults:
+  - _self_
+
+skip_forecast: false
+email: ???
+url_portal: "https://submission-7rre8iitk.brevlab.com"
+
+exp_name: ensemble
+ensemble_experiments: [baseline_mlp, cnn]
+
+data:
+  batch_size: 32
+  num_workers: 4
+  pin_memory: true
+
+device: cpu
+
+regions:
+  era5_region1:
+    input_path: data/train_data/test_in_era5_region1.zarr
+    output_path: data/forecasts/${exp_name}/test_era5_region1.nc
+  era5_region2:
+    input_path: data/train_data/test_in_era5_region2.zarr
+    output_path: data/forecasts/${exp_name}/test_era5_region2.nc
+  aimip_region1:
+    input_path: data/train_data/test_in_aimip_region1.zarr
+    output_path: data/forecasts/${exp_name}/test_aimip_region1.nc
+  aimip_region2:
+    input_path: data/train_data/test_in_aimip_region2.zarr
+    output_path: data/forecasts/${exp_name}/test_aimip_region2.nc

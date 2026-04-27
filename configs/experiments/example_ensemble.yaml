@@ -1,0 +1,6 @@
+# @package _global_
+
+exp_name: this_is_a_test
+ensemble_experiments:
+  - mlp_lr01
+  - baseline_mlp
