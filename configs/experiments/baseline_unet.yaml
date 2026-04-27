@@ -1,0 +1,9 @@
+# @package _global_
+
+# @package _global_
+
+defaults:
+  - override /model: unet
+
+exp_name: baseline_unet
+learning_rate: 0.001
