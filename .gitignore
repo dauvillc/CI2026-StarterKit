@@ -41,6 +41,7 @@ data/forecasts/
 data/train_data/
 data/models/
 
+wandb/
 outputs/
 multirun/
 
