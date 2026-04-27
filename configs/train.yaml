@@ -6,7 +6,7 @@ defaults:
 
 exp_name: baseline_mlp
 store_path: data/models/${exp_name}
-use_timestamp: true
+use_timestamp: false
 device: cpu
 seed: 42
 n_epochs: 10
