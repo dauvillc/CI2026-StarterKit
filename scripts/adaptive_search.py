@@ -74,7 +74,7 @@ def make_objective(store_prefix: str, device: str):
         hp = {
             "learning_rate": trial.suggest_float("learning_rate", 1e-5, 5e-3, log=True),
             "weight_decay": trial.suggest_float("weight_decay", 0.0, 1e-2),
-            "n_epochs": trial.suggest_int("n_epochs", 1, 2),
+            "n_epochs": trial.suggest_int("n_epochs", 10, 80),
             "hidden_dim": trial.suggest_categorical("hidden_dim", [16, 32, 64, 128]),
             "n_blocks": trial.suggest_int("n_blocks", 2, 6),
         }
