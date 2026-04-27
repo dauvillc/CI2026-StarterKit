@@ -10,6 +10,7 @@ lightning
 hydra-core
 hydra-submitit-launcher  # For jean-Zay cluster job submission
 omegaconf
+optuna
 wandb
 gcsfs
 s3fs
