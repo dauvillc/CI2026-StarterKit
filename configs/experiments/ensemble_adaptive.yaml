@@ -1,0 +1,8 @@
+# @package _global_
+
+exp_name: example_adaptive
+ensemble_experiments:
+  - adaptive_t010
+  - adaptive_t011
+  - adaptive_t012
+  - adaptive_t013
