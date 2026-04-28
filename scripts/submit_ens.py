@@ -71,11 +71,11 @@ _PORTAL_FIELDS = {
 }
 
 
-def get_network_config(exp_name: str) -> DictConfig:
+def get_network_config(exp_name: str, model_dir: str = "data/models") -> DictConfig:
     r"""
     Load the network sub-config saved by Hydra during training.
 
-    Reads ``data/models/<exp_name>/hydra/config.yaml`` and returns the
+    Reads ``<model_dir>/<exp_name>/hydra/config.yaml`` and returns the
     ``network`` node, which contains ``_target_`` and all hyperparameters
     needed to instantiate the network via ``hydra.utils.instantiate``.
 
@@ -83,6 +83,8 @@ def get_network_config(exp_name: str) -> DictConfig:
     ----------
     exp_name : str
         Name of the trained experiment.
+    model_dir : str
+        Root directory that contains per-experiment model folders.
 
     Returns
     -------
@@ -94,10 +96,10 @@ def get_network_config(exp_name: str) -> DictConfig:
     FileNotFoundError
         If the Hydra config file does not exist for ``exp_name``.
     """
-    config_path = Path(f"data/models/{exp_name}/hydra/config.yaml")
+    config_path = Path(f"{model_dir}/{exp_name}/hydra/config.yaml")
     if not config_path.exists():
         raise FileNotFoundError(
-            f"Hydra config not found for experiment '{exp_name}': {config_path}"
+            f"Hydra config not found for experiment '{exp_name}' in '{model_dir}': {config_path}"
         )
     # Load without resolving — the stored config has unresolved interpolations
     # (e.g. ${batch_size}) in other fields; only cfg.network is needed here
@@ -128,7 +130,7 @@ def _ensure_forecast(
     region_paths : DictConfig
         Region sub-config with ``input_path``.
     cfg : DictConfig
-        Full ensemble config (provides ``device`` and ``data``).
+        Full ensemble config (provides ``device``, ``data``, and ``model_dir``).
 
     Returns
     -------
@@ -146,12 +148,13 @@ def _ensure_forecast(
         return exp_output_path
 
     main_logger.info("Forecasting %s / %s …", exp_name, region)
-    network_cfg = get_network_config(exp_name)
+    model_dir = cfg.model_dir
+    network_cfg = get_network_config(exp_name, model_dir)
 
     forecast_cfg = OmegaConf.create(
         {
             "network": OmegaConf.to_container(network_cfg, resolve=True),
-            "ckpt_path": f"data/models/{exp_name}/best_model.ckpt",
+            "ckpt_path": f"{model_dir}/{exp_name}/best_model.ckpt",
             "input_path": str(region_paths.input_path),
             "output_path": str(exp_output_path),
             "device": cfg.device,
