@@ -3,7 +3,7 @@
 # @package _global_
 
 defaults:
-  - override /model: cnn
+  - override /model: optimized_cnn
 
 exp_name: optimized_cnn
 learning_rate: 0.0028168262317655388
