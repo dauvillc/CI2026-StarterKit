@@ -105,6 +105,7 @@ class BaseModel(abc.ABC):
         learning_rate: float = 1e-3,
         weight_decay: float = 1e-4,
         best_threshold: float = 0.99,
+        eta_min: float = 0.0,
         log_csv: bool = True,
         exp_name: str = "run",
         log_wandb: bool = False,
@@ -155,6 +156,7 @@ class BaseModel(abc.ABC):
         self.store_path = store_path
         self.best_model_path = os.path.join(store_path, "best_model.ckpt")
         self.best_threshold = best_threshold
+        self.eta_min = eta_min
 
         self.csv_logger = CSVLogger(os.path.join(store_path, "train_log.csv"))
         self.log_csv = log_csv
@@ -170,6 +172,7 @@ class BaseModel(abc.ABC):
                     "learning_rate": learning_rate,
                     "weight_decay": weight_decay,
                     "best_threshold": best_threshold,
+                    "eta_min": eta_min,
                 },
             )
         else:
@@ -216,6 +219,9 @@ class BaseModel(abc.ABC):
         """
         self._optimizer = torch.optim.AdamW(
             self.network.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay
+        )
+        self._scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            self._optimizer, T_max=self.n_epochs, eta_min=self.eta_min
         )
 
     def _move_to_device(self, batch: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
@@ -374,10 +380,12 @@ class BaseModel(abc.ABC):
                     "epoch": idx_epoch,
                     "train/epoch_loss": train_loss,
                     "val/epoch_loss": val_loss,
+                    "train/lr": self._optimizer.param_groups[0]["lr"],
                     **{f"val/{k}": v for k, v in aux_losses.items()},
                 },
                 flush=True,
             )
+            self._scheduler.step()
         if os.path.exists(self.best_model_path):
             self._load_best_checkpoint()
         else:
