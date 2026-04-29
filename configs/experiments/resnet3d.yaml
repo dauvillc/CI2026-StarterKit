@@ -4,4 +4,6 @@ defaults:
   - override /model: resnet3d
 
 exp_name: resnet3d
-learning_rate: 0.001
+learning_rate: 0.003
+batch_size: 16
+num_epochs: 25
