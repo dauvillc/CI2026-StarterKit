@@ -1,0 +1,9 @@
+# @package _global_
+
+defaults:
+  - override /model: unet3d
+
+exp_name: unet3d
+learning_rate: 0.001
+n_epochs: 25
+batch_size: 16
