@@ -9,5 +9,5 @@ ckpt_path: data/models/${exp_name}/best_model.ckpt
 input_path: data/train_data/val_era5_region1.zarr
 output_path: data/forecasts/${exp_name}/forecast.nc
 
-device: cpu
+device: cuda
 batch_size: 32
