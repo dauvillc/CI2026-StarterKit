@@ -8,7 +8,7 @@
 import abc
 import logging
 import os.path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 # External modules
 import torch
@@ -110,6 +110,7 @@ class BaseModel(abc.ABC):
         exp_name: str = "run",
         log_wandb: bool = False,
         wandb_project: str = "ci26_hackathon",
+        pretrained_path: Optional[str] = None,
     ) -> None:
         r"""
         Initialize the base trainer.
@@ -188,6 +189,8 @@ class BaseModel(abc.ABC):
         ).reshape(-1, 1)
 
         self._setup_optimizer()
+        if pretrained_path is not None:
+            self._load_pretrained_checkpoint(pretrained_path)
 
     @torch.inference_mode()
     def __call__(self, **batch) -> torch.Tensor:
@@ -261,6 +264,10 @@ class BaseModel(abc.ABC):
             )
             self._best_loss = val_loss
             torch.save(self.network.state_dict(), self.best_model_path)
+
+    def _load_pretrained_checkpoint(self, path: str) -> None:
+        main_logger.info(f"Loading pretrained checkpoint from {path}.")
+        self.network.load_state_dict(torch.load(path, map_location=self.device))
 
     def _load_best_checkpoint(self) -> None:
         r"""

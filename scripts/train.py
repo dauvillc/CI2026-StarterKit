@@ -146,6 +146,7 @@ def main(cfg: DictConfig) -> None:
         exp_name=cfg.exp_name,
         log_wandb=cfg.log_wandb,
         wandb_project=cfg.wandb_project,
+        pretrained_path=cfg.pretrained_path,
     )
 
     model.train()
