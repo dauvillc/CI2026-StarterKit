@@ -23,6 +23,8 @@ from pathlib import Path
 from typing import Tuple
 
 import hydra
+from hydra.core.hydra_config import HydraConfig
+from hydra.types import RunMode
 
 # External modules
 import torch
@@ -127,6 +129,11 @@ def main(cfg: DictConfig) -> None:
         with open_dict(cfg):
             # The following also modifies the store_path since it references exp_name
             cfg.exp_name = f"{cfg.exp_name}_{_ts}"
+
+    hc = HydraConfig.get()
+    if hc.mode == RunMode.MULTIRUN:
+        with open_dict(cfg):
+            cfg.store_path = hc.runtime.output_dir
 
     os.makedirs(cfg.store_path, exist_ok=True)
     _hydra_cfg_path = Path(cfg.store_path) / "hydra" / "config.yaml"

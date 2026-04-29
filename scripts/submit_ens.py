@@ -148,6 +148,7 @@ def _ensure_forecast(
         return exp_output_path
 
     main_logger.info("Forecasting %s / %s …", exp_name, region)
+    exp_output_path.parent.mkdir(parents=True, exist_ok=True)
     model_dir = cfg.model_dir
     network_cfg = get_network_config(exp_name, model_dir)
 
