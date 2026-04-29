@@ -54,7 +54,6 @@ def build_train_command(hp: dict, exp_name: str, store_prefix: str, device: str)
         f"store_path={store_prefix}/{exp_name}",
         f"device={device}",
         "log_wandb=true",
-        "use_timestamp=false",
     ]
 
 
