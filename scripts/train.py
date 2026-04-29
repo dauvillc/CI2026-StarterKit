@@ -18,7 +18,6 @@ Override config values on the command line::
 # System modules
 import logging
 import os
-from datetime import datetime
 from pathlib import Path
 from typing import Tuple
 
@@ -123,12 +122,6 @@ def main(cfg: DictConfig) -> None:
     """
     torch.manual_seed(cfg.seed)
     device = torch.device(cfg.device)
-
-    if cfg.use_timestamp:
-        _ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        with open_dict(cfg):
-            # The following also modifies the store_path since it references exp_name
-            cfg.exp_name = f"{cfg.exp_name}_{_ts}"
 
     hc = HydraConfig.get()
     if hc.mode == RunMode.MULTIRUN:

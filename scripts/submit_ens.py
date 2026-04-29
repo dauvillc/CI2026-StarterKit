@@ -45,7 +45,6 @@ import xarray as xr
 # Internal modules
 from forecast import run_forecast
 from omegaconf import DictConfig, OmegaConf
-from starter_kit.utils import find_matching_runs
 
 main_logger = logging.getLogger(__name__)
 
@@ -214,28 +213,28 @@ def _run_all_ensemble_forecasts(cfg: DictConfig) -> None:
     r"""
     For every region, ensure all per-experiment forecasts exist then average.
 
+    Scans ``cfg.model_dir`` for every subdirectory that contains a
+    ``best_model.ckpt`` and uses all of them as ensemble members.
+
     Parameters
     ----------
     cfg : DictConfig
         Full ensemble config tree.
     """
-    ensemble_experiments = list(cfg.ensemble_experiments)
-    expanded = []
-    for name in ensemble_experiments:
-        runs = find_matching_runs(name)
-        if runs:
-            expanded.extend(runs)
-        else:
-            main_logger.warning("No model runs found for exp_name=%s — skipping.", name)
-    ensemble_experiments = expanded
-    if not ensemble_experiments:
-        main_logger.error("ensemble_experiments is empty — nothing to do.")
+    model_dir = Path(cfg.model_dir)
+    exp_names = sorted(
+        d.name for d in model_dir.iterdir()
+        if d.is_dir() and (d / "best_model.ckpt").is_file()
+    )
+    if not exp_names:
+        main_logger.error("No models found in %s — nothing to do.", model_dir)
         sys.exit(1)
+    main_logger.info("Found %d models in %s: %s", len(exp_names), model_dir, exp_names)
 
     for region in _REGIONS:
         region_paths = cfg.regions[region]
         per_exp_paths: List[Path] = []
-        for exp_name in ensemble_experiments:
+        for exp_name in exp_names:
             path = _ensure_forecast(exp_name, region, region_paths, cfg)
             per_exp_paths.append(path)
 

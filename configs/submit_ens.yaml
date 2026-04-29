@@ -6,7 +6,6 @@ email: ???
 url_portal: "https://submission-7rre8iitk.brevlab.com"
 
 exp_name: ensemble
-ensemble_experiments: [baseline_mlp, baseline_parametric, baseline_sundquist]
 model_dir: data/models
 
 data:
