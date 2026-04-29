@@ -6,25 +6,21 @@
 r"""
 Run ensemble forecasts and submit averaged predictions to the portal.
 
-Each experiment in ``ensemble_experiments`` is forecasted independently
+All models found under ``model_dir`` are forecasted independently
 (skipped if the netCDF already exists), then all per-region forecasts are
 averaged pixel-wise before submission.
 
-The ensemble experiment file (e.g. configs/experiments/my_ensemble.yaml)
-lists experiment names; each name must have a trained checkpoint under
-``data/models/<exp_name>/`` and a saved Hydra config at
-``data/models/<exp_name>/hydra/config.yaml``.
+Each model must have a checkpoint at ``<model_dir>/<exp_name>/best_model.ckpt``
+and a saved Hydra config at ``<model_dir>/<exp_name>/hydra/config.yaml``.
 
 Run from the starter_kit root directory::
 
-    python scripts/submit_ens.py \
-        +experiment=example_ensemble \
-        email=you@example.com
+    python scripts/submit_ens.py email=you@example.com
 
-Override device or skip forecasting::
+Override device, model directory, or skip forecasting::
 
     python scripts/submit_ens.py \
-        +experiment=example_ensemble \
+        model_dir=data/models \
         device=cuda \
         skip_forecast=true \
         email=you@example.com
@@ -213,28 +209,25 @@ def _run_all_ensemble_forecasts(cfg: DictConfig) -> None:
     r"""
     For every region, ensure all per-experiment forecasts exist then average.
 
-    Scans ``cfg.model_dir`` for every subdirectory that contains a
-    ``best_model.ckpt`` and uses all of them as ensemble members.
-
     Parameters
     ----------
     cfg : DictConfig
         Full ensemble config tree.
     """
     model_dir = Path(cfg.model_dir)
-    exp_names = sorted(
-        d.name for d in model_dir.iterdir()
-        if d.is_dir() and (d / "best_model.ckpt").is_file()
+    ensemble_experiments = sorted(
+        str(ckpt.parent.relative_to(model_dir))
+        for ckpt in model_dir.rglob("best_model.ckpt")
     )
-    if not exp_names:
-        main_logger.error("No models found in %s — nothing to do.", model_dir)
+    if not ensemble_experiments:
+        main_logger.error("No checkpoints found in %s — nothing to do.", model_dir)
         sys.exit(1)
-    main_logger.info("Found %d models in %s: %s", len(exp_names), model_dir, exp_names)
+    main_logger.info("Found %d model(s): %s", len(ensemble_experiments), ensemble_experiments)
 
     for region in _REGIONS:
         region_paths = cfg.regions[region]
         per_exp_paths: List[Path] = []
-        for exp_name in exp_names:
+        for exp_name in ensemble_experiments:
             path = _ensure_forecast(exp_name, region, region_paths, cfg)
             per_exp_paths.append(path)
 
