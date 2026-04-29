@@ -2,7 +2,7 @@
 """Adaptive CNN hyperparameter search using Optuna's TPE sampler.
 
 Results accumulate in a SQLite study (resumable). Each trial trains the
-baseline_cnn via scripts/train.py and reports the best validation MAE.
+optimized_cnn via scripts/train.py and reports the best validation MAE.
 
 Usage:
     python scripts/adaptive_search.py --device cuda --n-trials 50
@@ -44,7 +44,7 @@ def build_train_command(hp: dict, exp_name: str, store_prefix: str, device: str)
     return [
         "python",
         "scripts/train.py",
-        "+experiments=baseline_cnn",
+        "+experiments=optimized_cnn",
         f"learning_rate={hp['learning_rate']}",
         f"model.weight_decay={hp['weight_decay']}",
         f"n_epochs={hp['n_epochs']}",
