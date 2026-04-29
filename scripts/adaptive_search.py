@@ -72,11 +72,11 @@ def parse_val_loss(store_prefix: str, exp_name: str) -> float | None:
 def make_objective(store_prefix: str, device: str):
     def objective(trial: optuna.Trial) -> float:
         hp = {
-            "learning_rate": trial.suggest_float("learning_rate", 1e-5, 5e-3, log=True),
+            # "learning_rate": trial.suggest_float("learning_rate", 1e-3, 5e-3, log=True),
             "weight_decay": trial.suggest_float("weight_decay", 0.0, 1e-2),
-            "n_epochs": trial.suggest_int("n_epochs", 10, 50),
-            "hidden_dim": trial.suggest_categorical("hidden_dim", [16, 32, 64, 128]),
-            "n_blocks": trial.suggest_int("n_blocks", 2, 6),
+            "n_epochs": trial.suggest_int("n_epochs", 20, 40),
+            "hidden_dim": trial.suggest_categorical("hidden_dim", [64, 128, 256]),
+            "n_blocks": trial.suggest_categorical("n_blocks", [4, 6, 8, 12]),
         }
         exp_name = f"adaptive_t{trial.number:03d}"
         cmd = build_train_command(hp, exp_name, store_prefix, device)
