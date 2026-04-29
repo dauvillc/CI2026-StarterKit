@@ -1,0 +1,18 @@
+# @package _global_
+
+model:
+  _target_: starter_kit.models.resnet3d.ResNet3DModel
+  n_epochs: ${n_epochs}
+  learning_rate: ${learning_rate}
+  weight_decay: 0.
+  best_threshold: 0.99
+  log_csv: true
+
+network:
+  _target_: starter_kit.models.resnet3d.ResNet3DNetwork
+  in_channels_level: 4
+  in_channels_aux: 2
+  n_levels: 7
+  hidden_dim: 64
+  temporal_kernel_size_stem: 3
+  pretrained: true
